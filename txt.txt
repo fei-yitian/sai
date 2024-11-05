@@ -1,0 +1,21 @@
+    graph[0] = {1};
+    graph[1] = {2};
+    graph[2] = {2, 3};  // 自环 2 -> 2
+    graph[3] = {1, 2, 4};  // 形成环 1 -> 2 -> 3 -> 1 和 2 -> 3 -> 2
+    graph[4] = {};
+
+#include <unordered_map>
+#include <list>
+unordered_map<int, list<int>> graph;
+
+    graph["o"] = {"a"};
+    graph["a"] = {"b"};
+    graph["b"] = {"b", "c"};  // 自环 b -> b
+    graph["c"] = {"b", "a", "d"};  // 形成环 a -> b -> c -> a 和 b -> c -> b
+    graph["d"] = {};
+
+
+    graph["w0"] = {"I1"};
+    graph["I1"] = {"W1"};
+    graph["W1"] = {"I1"};
+
