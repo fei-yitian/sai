@@ -4,8 +4,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "vpi_user.h"
-#include "sv_vpi_user.h"
+// #include "vpi_user.h"
+// #include "sv_vpi_user.h"
 #include <list>
 #include <unordered_set>
 #include <algorithm>
@@ -171,18 +171,17 @@ public:
                         never.push_back(scc);
                     }
                     else {
-                        points.reserve(1000);
                         if(cycles.size() == 1){//只有一个奇数环一定能震
                             could.push_back(scc);
                             cyc_size.push_back(1);
-                            points.push_back({""});
+                            points.push_back({});
                         }
                         else if(cycles.size() == 2 && zhen == 2){//（只有两个环，且都为奇数）一定能震吗？
                             could.push_back(scc);
                             cyc_size.push_back(2);
                             points.push_back(find_point(scc));
                         }
-                        else if(cycles.size()==2 && zhen == 1){//只有两个环，一奇一偶
+                        else if(cycles.size() == 2 && zhen == 1){//只有两个环，一奇一偶
 
                             bool stop = true;//stop表示能否抑制
                             vector<string> point = find_point(scc);//point为一个存放后缀为port的容器，我们暂时默认他只有一个
@@ -350,7 +349,7 @@ public:
 
         if(q3){
 
-            cout<<"  Loop Condition: ";
+            cout<<"  Loop Conditions: ";
 
             vector<string> scc_p;
             for (string port:scc_g) {
@@ -379,7 +378,7 @@ public:
             cout<<endl;
         }
         
-        cout<<endl;
+        cout<<endl<<endl;
     }
 
     void result1(){
@@ -409,29 +408,30 @@ public:
         }
     }
 
-void result4() {
-    cout << "******* result_4.txt *********" << endl;
-    int i = 1;
-    for (vector<string> scc : could) {
+    void result4(){
+        cout << "******* result_4.txt *********"<<endl;
 
-        cout << i << ")" << endl << "  Loop Breaker: ";
+        int i=1;
+        for(vector<string> scc:could){
+            cout<<i<<")"<<endl<<"  Loop Breaker: ";
 
-        if (cyc_size[i-1] == 1) {
-            cout << mapstrg_w[scc[0]];
+            if(cyc_size[i-1] == 1){
+                cout<<mapstrg_w[scc[0]];
+            }
+            else if(cyc_size[i-1]==2){
+                if(!points.empty()){
+                    cout<<mapstrg_w[points[i-1][0].substr(0,points[i-1][0].size() - 5)];
+                }
+            }
+            i++;
+            cout<<endl<<endl<<endl;
         }
-        else if (cyc_size[i-1] == 2) {
-            cout << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
-        }
-        i++;
-        cout << endl << endl << endl;
     }
-}
 
     vector<vector<string>> all_scc;//存放所有scc
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
     vector<int> cyc_size;//记录可能震荡的scc有几个环
     unordered_map<string, list<string>> graph;
 
@@ -461,50 +461,50 @@ void printModInfo()
 
 
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
+// #ifdef  __cplusplus
+// extern "C" {
+// #endif
 
-int get_module_info( )
-{
-    vpiHandle systf_h = vpi_handle( vpiSysTfCall, NULL );
-    if( systf_h == NULL )
-        return 0;
+// int get_module_info( )
+// {
+//     vpiHandle systf_h = vpi_handle( vpiSysTfCall, NULL );
+//     if( systf_h == NULL )
+//         return 0;
 
-    vpiHandle modHdl = vpi_handle( vpiScope,systf_h );
-    modHdl = vpi_handle(vpiModule, modHdl);
-    char *pModDefName = vpi_get_str(vpiDefName, modHdl);
-    _glbNetlistModule.setModuleName(pModDefName);
+//     vpiHandle modHdl = vpi_handle( vpiScope,systf_h );
+//     modHdl = vpi_handle(vpiModule, modHdl);
+//     char *pModDefName = vpi_get_str(vpiDefName, modHdl);
+//     _glbNetlistModule.setModuleName(pModDefName);
 
-    vpiHandle instIter = vpi_iterate(vpiInstance, modHdl);
-    vpiHandle instHdl = NULL;
-    while( ( instHdl = vpi_scan( instIter ) ) )
-    {
-        char* pInstName = vpi_get_str( vpiName, instHdl );
-        GateInst* pGateInst = new GateInst(pInstName);
+//     vpiHandle instIter = vpi_iterate(vpiInstance, modHdl);
+//     vpiHandle instHdl = NULL;
+//     while( ( instHdl = vpi_scan( instIter ) ) )
+//     {
+//         char* pInstName = vpi_get_str( vpiName, instHdl );
+//         GateInst* pGateInst = new GateInst(pInstName);
 
-        char *pModDefName = vpi_get_str(vpiDefName, instHdl);
-        pGateInst->setGateType(pModDefName);
+//         char *pModDefName = vpi_get_str(vpiDefName, instHdl);
+//         pGateInst->setGateType(pModDefName);
 
-        vpiHandle portIter = vpi_iterate(vpiPort, instHdl);
-        vpiHandle portHdl = NULL;
-        while ( (portHdl = vpi_scan(portIter)) )
-        {
-            vpiHandle highConnHdl = vpi_handle(vpiHighConn, portHdl);
-            char* pPortName = vpi_get_str(vpiName, highConnHdl);
-            pGateInst->addNodeName(pPortName);
-        }
+//         vpiHandle portIter = vpi_iterate(vpiPort, instHdl);
+//         vpiHandle portHdl = NULL;
+//         while ( (portHdl = vpi_scan(portIter)) )
+//         {
+//             vpiHandle highConnHdl = vpi_handle(vpiHighConn, portHdl);
+//             char* pPortName = vpi_get_str(vpiName, highConnHdl);
+//             pGateInst->addNodeName(pPortName);
+//         }
 
-        _glbNetlistModule.addInst(pGateInst);
-    }
+//         _glbNetlistModule.addInst(pGateInst);
+//     }
 
-    printModInfo();
-    vpi_control(vpiFinish);
-    return 0;
-}
+//     printModInfo();
+//     vpi_control(vpiFinish);
+//     return 0;
+// }
 
-#ifdef  __cplusplus
-}
-#endif
+// #ifdef  __cplusplus
+// }
+// #endif
 
 

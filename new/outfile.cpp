@@ -11,6 +11,7 @@
 #include <algorithm>
 #include<stack>
 #include <set>
+#include <fstream>
 using namespace std;
 
 typedef vector<string>   StrVec;
@@ -191,11 +192,12 @@ public:
 
                                 if(ji[i] == false){//找到偶数环路
                                     vector<string>& cycle = cycles[i];
-                                    // cout<<endl;
+                                    //cout<<endl;
                                     // cout<<"找到偶数环路"<<endl;
 
                                     for(int j = 0; j < cycle.size(); j++){//找到起始
                                         string & gate = cycle[j];
+                                        //cout<<gate<<", ";
 
                                         if(gate == point[0].substr(0,point[0].size() - 5)){
 
@@ -213,11 +215,11 @@ public:
                                             for(int k = 1; k < cycle.size(); k++){//循环cycle.size()-1次
                                                 string now_gate;//目前需要判断的门
 
-                                                if(point_num != 0)
-                                                    now_gate = cycle[point_num - 1];
-                                                else
-                                                    now_gate = cycle[cycle.size()-1];
-
+                                                if(point_num == 0)
+                                                    point_num = cycle.size();
+                                                
+                                                now_gate = cycle[point_num - 1];
+                                                
                                                 //cout<<now_gate<<", ";
                                                 point_num--;
                                                 
@@ -227,10 +229,12 @@ public:
                                                     could.push_back(scc);
                                                     cyc_size.push_back(2);
                                                     points.push_back(point);
+
                                                     stop = false;
                                                     break;
                                                 }
                                             }
+                                            //break;
                                         }
                                     }
                                 }
@@ -247,16 +251,20 @@ public:
     int panduan(int &x,string gate){//判断节点是否会改变信号或者锁定信号
         string type=mapstrg_t[gate];
         if(x == 1){
-            if(type == "nand2"||type == "or2")//锁定值为1的门
+            if(type == "nand2"||type == "or2"){//锁定值为1的门
+                black_sheep.push_back(gate);
                 x = 3;//跳出循环
+            }
             if(type=="not1")
                 x = 0;        
         }
         else if(x == 0){
             if(type == "not1"||type == "nand2")
                 x = 1;
-            if(type == "and2")//锁定值为0的门
+            if(type == "and2"){//锁定值为0的门
+                black_sheep.push_back(gate);
                 x = 3;
+            }
         }
         return x;
     }
@@ -324,7 +332,7 @@ public:
         return gateType.find("not") != string::npos || gateType.find("nand") != string::npos;
     }
 
-    void show_scc(const vector<string> &scc,const int &i,bool q3){
+    void show_scc(const vector<string> &scc,const int &i,bool q3,ofstream & result){
         vector<string> scc_w;
         vector<string> scc_g;
         for(const string gate:scc){
@@ -340,17 +348,17 @@ public:
         sort(scc_w.begin(), scc_w.end());
         sort(scc_g.begin(),scc_g.end());
 
-        cout<<i<<")"<<endl<<"  Loop Signals: ";
+        result<<i<<")"<<endl<<"  Loop Signals: ";
         for(const string wire:scc_w)
-            cout<<wire<<", ";
-        cout<<endl<<"  Loop Gates: ";
+            result<<wire<<", ";
+        result<<endl<<"  Loop Gates: ";
         for(const string gate:scc_g)
-            cout<<gate<<", ";
-        cout<<endl;
+            result<<gate<<", ";
+        result<<endl;
 
         if(q3){
 
-            cout<<"  Loop Condition: ";
+            result<<"  Loop Condition: ";
 
             vector<string> scc_p;
             for (string port:scc_g) {
@@ -364,75 +372,103 @@ public:
                     if(port.substr(0,port.size() - 1) == the_point)
                         out = false;
                 }
+
+                bool out_bs = false;
+                for(string & the_bs:black_sheep){
+                    if(port.substr(0,port.size() - 6) == the_bs){
+                        out_bs = true;
+                        break;
+                    }
+                }
+
                 if(out){
                     if(port.back()=='1')
                         port.back()='2';
                     else
                         port.back()='1';
 
-                    if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
-                        cout << port << "=1, " ;
-                    else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
-                        cout << port << "=0, " ;
+                    if(out_bs){
+
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            result << port << "=0, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            result << port << "=1, " ;
+                    }
+                    else{
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            result << port << "=1, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            result << port << "=0, " ;
+                    }
                 }
             }
-            cout<<endl;
+            result<<endl;
         }
         
-        cout<<endl;
+        result<<endl;
+
     }
 
     void result1(){
-        cout << "******* result_1.txt *********"<<endl;
+        //cout << "******* result_1.txt *********"<<endl;
         int i=1;
+        ofstream result_1("result_1.txt");
         for(vector<string> scc:all_scc){
-            show_scc(scc,i,false);
+            show_scc(scc,i,false,result_1);
             i++;
         }
+        result_1.close();
     }
 
     void result2(){
-        cout << "******* result_2.txt *********"<<endl;
+        //cout << "******* result_2.txt *********"<<endl;
         int i=1;
+        ofstream result_2("result_2.txt");
         for(vector<string> scc:never){
-            show_scc(scc,i,false);
+            show_scc(scc,i,false,result_2);
             i++;
         }
+        result_2.close();
     }
 
     void result3(){
-        cout << "******* result_3.txt *********"<<endl;
+        //cout << "******* result_3.txt *********"<<endl;
         int i=1;
+        ofstream result_3("result_3.txt");
         for(vector<string> scc:could){
-            show_scc(scc,i,true);
+            show_scc(scc,i,true,result_3);
             i++;
         }
+        result_3.close();
     }
 
 void result4() {
-    cout << "******* result_4.txt *********" << endl;
+    ofstream result_4("result_4.txt");
+    //cout << "******* result_4.txt *********" << endl;
     int i = 1;
     for (vector<string> scc : could) {
 
-        cout << i << ")" << endl << "  Loop Breaker: ";
+        result_4 << i << ")" << endl << "  Loop Breaker: ";
 
         if (cyc_size[i-1] == 1) {
-            cout << mapstrg_w[scc[0]];
+            result_4 << mapstrg_w[scc[0]];
         }
         else if (cyc_size[i-1] == 2) {
-            cout << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
+            result_4 << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
         }
         i++;
-        cout << endl << endl << endl;
+        result_4 << endl << endl << endl;
     }
+    result_4.close();
 }
 
     vector<vector<string>> all_scc;//存放所有scc
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
+    vector<string> black_sheep;//存放可能震荡的scc中，使得可能震荡的那个门 
     vector<int> cyc_size;//记录可能震荡的scc有几个环
+
     unordered_map<string, list<string>> graph;
 
     unordered_map<string, vector<string>> mapstrw_p;//wire find port

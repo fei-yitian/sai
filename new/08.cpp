@@ -227,6 +227,7 @@ public:
                                                     could.push_back(scc);
                                                     cyc_size.push_back(2);
                                                     points.push_back(point);
+
                                                     stop = false;
                                                     break;
                                                 }
@@ -247,16 +248,20 @@ public:
     int panduan(int &x,string gate){//判断节点是否会改变信号或者锁定信号
         string type=mapstrg_t[gate];
         if(x == 1){
-            if(type == "nand2"||type == "or2")//锁定值为1的门
+            if(type == "nand2"||type == "or2"){//锁定值为1的门
+                black_sheep.push_back(gate);
                 x = 3;//跳出循环
+            }
             if(type=="not1")
                 x = 0;        
         }
         else if(x == 0){
             if(type == "not1"||type == "nand2")
                 x = 1;
-            if(type == "and2")//锁定值为0的门
+            if(type == "and2"){//锁定值为0的门
+                black_sheep.push_back(gate);
                 x = 3;
+            }
         }
         return x;
     }
@@ -364,16 +369,33 @@ public:
                     if(port.substr(0,port.size() - 1) == the_point)
                         out = false;
                 }
+
+                bool out_bs = false;
+                for(string & the_bs:black_sheep){
+                    if(port.substr(0,port.size() - 6) == the_bs){
+                        out_bs = true;
+                        break;
+                    }
+                }
+
                 if(out){
                     if(port.back()=='1')
                         port.back()='2';
                     else
                         port.back()='1';
 
-                    if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
-                        cout << port << "=1, " ;
-                    else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
-                        cout << port << "=0, " ;
+                    if(out_bs){
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            cout << port << "=0, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            cout << port << "=1, " ;
+                    }
+                    else{
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            cout << port << "=1, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            cout << port << "=0, " ;
+                    }
                 }
             }
             cout<<endl;
@@ -431,8 +453,9 @@ void result4() {
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
+    vector<string> black_sheep;//存放可能震荡的scc中，使得可能震荡的那个门 
     vector<int> cyc_size;//记录可能震荡的scc有几个环
+
     unordered_map<string, list<string>> graph;
 
     unordered_map<string, vector<string>> mapstrw_p;//wire find port

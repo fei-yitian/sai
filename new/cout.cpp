@@ -104,6 +104,10 @@ public:
         vector<bool> instack(graphsize,false);
         stack<int> s;
         static int time = 1;
+        all_scc.reserve(1000);
+        never.reserve(1000);
+        could.reserve(1000);
+        points.reserve(1000);
         for (int i = 0; i < graphsize; i++) {
             if(dfn[i]==0)
             tarjan(dfn, low, i,instack,time,s);
@@ -152,26 +156,12 @@ public:
                     //找奇偶数的环
                     int zhen = 0;
                     vector<bool> ji;//判断环路内反相器是否是奇数
-                    for (const vector<string>& cycle : cycles) {
-                        int invertingGateCount = 0;
-                        for (const string& gate : cycle) {
-                            if(isInvertingGate(mapstrg_t[gate])){
-                                invertingGateCount++;
-                            }
-                        }
-                        if (invertingGateCount % 2 == 1) {//可能震荡
-                            zhen++;
-                            ji.push_back(true);
-                        }
-                        else{
-                            ji.push_back(false);
-                        }
-                    }
+                    is_zhen(zhen,ji,cycles);
+
                     if(zhen == 0){//scc内所有的环都为偶数
                         never.push_back(scc);
                     }
                     else {
-                        points.reserve(1000);
                         if(cycles.size() == 1){//只有一个奇数环一定能震
                             could.push_back(scc);
                             cyc_size.push_back(1);
@@ -191,13 +181,14 @@ public:
 
                                 if(ji[i] == false){//找到偶数环路
                                     vector<string>& cycle = cycles[i];
-                                    // cout<<endl;
+                                    //cout<<endl;
                                     // cout<<"找到偶数环路"<<endl;
 
                                     for(int j = 0; j < cycle.size(); j++){//找到起始
                                         string & gate = cycle[j];
+                                        //cout<<gate<<", ";
 
-                                        if(gate == point[0].substr(0,point[0].size() - 5)){
+                                        if(gate == point[0]){
 
                                             //cout<<"找到point"<<endl;
 
@@ -213,11 +204,11 @@ public:
                                             for(int k = 1; k < cycle.size(); k++){//循环cycle.size()-1次
                                                 string now_gate;//目前需要判断的门
 
-                                                if(point_num != 0)
-                                                    now_gate = cycle[point_num - 1];
-                                                else
-                                                    now_gate = cycle[cycle.size()-1];
-
+                                                if(point_num == 0)
+                                                    point_num = cycle.size();
+                                                
+                                                now_gate = cycle[point_num - 1];
+                                                
                                                 //cout<<now_gate<<", ";
                                                 point_num--;
                                                 
@@ -227,10 +218,12 @@ public:
                                                     could.push_back(scc);
                                                     cyc_size.push_back(2);
                                                     points.push_back(point);
+
                                                     stop = false;
                                                     break;
                                                 }
                                             }
+                                            break;
                                         }
                                     }
                                 }
@@ -238,25 +231,62 @@ public:
                             if(stop)
                                 never.push_back(scc);
                         }
+                        else if(zhen == 3){//三个奇数环
+                            could.push_back(scc);
+                            cyc_size.push_back(3);
+                            points.push_back(find_point(scc));
+                        }
+                        else if(cycles.size() == 3 && zhen == 1){
+                            could.push_back(scc);
+                            cyc_size.push_back(3);
+                            points.push_back(find_point(scc));
+                        }
+                        else if(cycles.size() == 3 && zhen == 2){
+                            could.push_back(scc);
+                            cyc_size.push_back(3);
+                            points.push_back(find_point(scc));
+                        }
                     }
 
                 }
         }
     }
 
+    void is_zhen(int &zhen,vector<bool> &ji,const vector<vector<string>> &cycles){
+        for (const vector<string>& cycle : cycles) {
+            int invertingGateCount = 0;
+            for (const string& gate : cycle) {
+                if(isInvertingGate(mapstrg_t[gate])){
+                    invertingGateCount++;
+                }
+            }
+            if (invertingGateCount % 2 == 1) {//可能震荡
+                zhen++;
+                ji.push_back(true);
+            }
+            else{
+                ji.push_back(false);
+            }
+        }
+    }
+
     int panduan(int &x,string gate){//判断节点是否会改变信号或者锁定信号
         string type=mapstrg_t[gate];
         if(x == 1){
-            if(type == "nand2"||type == "or2")//锁定值为1的门
+            if(type == "nand2"||type == "or2"){//锁定值为1的门
+                black_sheep.push_back(gate);
                 x = 3;//跳出循环
+            }
             if(type=="not1")
                 x = 0;        
         }
         else if(x == 0){
             if(type == "not1"||type == "nand2")
                 x = 1;
-            if(type == "and2")//锁定值为0的门
+            if(type == "and2"){//锁定值为0的门
+                black_sheep.push_back(gate);
                 x = 3;
+            }
         }
         return x;
     }
@@ -272,7 +302,11 @@ public:
             }
         }
         vector<string> point = find_duplicates(scc_p);
-        return vector<string>(point.begin(), point.end());
+        vector<string> true_point;
+        for(auto g:point){
+            true_point.push_back(g.substr(0,g.size() - 5));
+        }
+        return vector<string>(true_point.begin(), true_point.end());
     }
 
     vector<string> find_duplicates(const vector<string>& vec) {
@@ -326,7 +360,7 @@ public:
 
     void show_scc(const vector<string> &scc,const int &i,bool q3){
         vector<string> scc_w;
-        vector<string> scc_g;
+        vector<string> scc_g;//scc内所有port排好序
         for(const string gate:scc){
                 scc_w.push_back(mapstrg_w[gate]);
                 for(const string port:mapstrw_p[mapstrg_w[gate]]){
@@ -364,16 +398,34 @@ public:
                     if(port.substr(0,port.size() - 1) == the_point)
                         out = false;
                 }
+
+                bool out_bs = false;
+                for(string & the_bs:black_sheep){//使得震荡的门要反向输出
+                    if(port.substr(0,port.size() - 6) == the_bs){
+                        out_bs = true;
+                        break;
+                    }
+                }
+
                 if(out){
                     if(port.back()=='1')
                         port.back()='2';
                     else
                         port.back()='1';
 
-                    if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
-                        cout << port << "=1, " ;
-                    else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
-                        cout << port << "=0, " ;
+                    if(out_bs){
+
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            cout << port << "=0, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            cout << port << "=1, " ;
+                    }
+                    else{
+                        if(mapstrg_t[port.substr(0,port.size() - 6)]=="and2"||mapstrg_t[port.substr(0,port.size() - 6)]=="nand2")
+                            cout << port << "=1, " ;
+                        else if(mapstrg_t[port.substr(0,port.size() - 6)]=="or2")
+                            cout << port << "=0, " ;
+                    }
                 }
             }
             cout<<endl;
@@ -420,7 +472,88 @@ void result4() {
             cout << mapstrg_w[scc[0]];
         }
         else if (cyc_size[i-1] == 2) {
-            cout << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
+            cout << mapstrg_w[points[i-1][0]];
+        }
+        else if (cyc_size[i-1] == 3) {
+            unordered_map<string, bool> visited;  // 记录当前SCC内部访问过的节点
+            unordered_map<string, bool> in_recursion;
+            vector<string> path;  // 当前路径
+            vector<vector<string>> cycles;  // 存储当前SCC中的所有环路
+            for (const string& start_gate : scc) {
+                dfs_find_cycles(start_gate, visited, in_recursion, path, cycles, scc);
+            }
+
+            unordered_set<string> set0(cycles[0].begin(),cycles[0].end());
+            unordered_set<string> set1;
+            vector<string> fin;
+            for (const auto& str : cycles[1]) 
+                if (set0.count(str)) 
+                    set1.insert(str);
+            for (const auto& str : cycles[2]) 
+                if (set1.count(str)) 
+                    fin.push_back(str);
+
+            if(!fin.empty()){//三环有某个门重复了三次，只需插入一个reg
+                    cout << mapstrg_w[fin[0]];
+            }
+            else{//三环没有门重复了三次
+                int zhen = 0;
+                vector<bool> ji;
+                is_zhen(zhen,ji,cycles);
+                if(zhen == 1){//只有一个奇数环，只在奇数环上插一个reg
+                    for(int j = 0 ; j < 3 ; j++){
+                        if(ji[j] == true){
+                            cout << mapstrg_w[cycles[j][0]];
+                        }
+                    }
+                }
+                else if(zhen == 2){//两个奇数环
+                    bool is_ji[2][2] ={{false,false},{false,false}};
+                    for(int z = 0 ; z < 2 ; z++){//第z个point
+                        int a = 0;//记录第z个point找到的次数
+                        for(int x = 0 ; x < 3 ; x++){//x为第x个环
+                            for(int y = 0 ; y < cycles[x].size() ; y++){//遍历第x个环中所有gate
+                                if((points[i-1][z]) == cycles[x][y]){//在第x环中找到了point
+                                    int invertingGateCount = 0;
+                                    for (const string& gate : cycles[x]) {
+                                        if(isInvertingGate(mapstrg_t[gate])){
+                                            invertingGateCount++;
+                                        }
+                                    }
+                                    if (invertingGateCount % 2 == 1) {//奇数环
+                                        is_ji[z][a] = true;
+                                    }
+                                    a++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    bool is_one = false;
+                    int only_point;
+                    for(int z = 0 ; z < 2 ; z++){
+                        if(is_ji[z][0] == is_ji[z][1]){
+                            is_one = true;
+                            only_point = z;
+                        }
+                    }
+                    if(is_one){//两个奇数环相邻，只需插一个
+                        cout << mapstrg_w[points[i-1][only_point]];
+                    }
+                    else{//奇偶奇的情况，需要插两个
+                        cout << mapstrg_w[points[i-1][0]];
+                        cout << ", ";
+                        cout << mapstrg_w[points[i-1][1]];
+                        cout << ", ";
+                    }
+                }
+                else if(zhen == 3){//如果三个奇数环，在两个point后插
+                    cout << mapstrg_w[points[i-1][0]];
+                    cout << ", ";
+                    cout << mapstrg_w[points[i-1][1]];
+                    cout << ", ";
+                }
+            }
         }
         i++;
         cout << endl << endl << endl;
@@ -431,8 +564,9 @@ void result4() {
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
+    vector<string> black_sheep;//存放可能震荡的scc中，使得可能震荡的那个门 
     vector<int> cyc_size;//记录可能震荡的scc有几个环
+
     unordered_map<string, list<string>> graph;
 
     unordered_map<string, vector<string>> mapstrw_p;//wire find port

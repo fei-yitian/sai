@@ -1,297 +1,240 @@
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-// #include "vpi_user.h"
-// #include "sv_vpi_user.h"
 #include <vector>
 #include <string>
+#include "vpi_user.h"
+#include "sv_vpi_user.h"
 #include <unordered_map>
-#include <list>
-#include <bits/stdc++.h>
 #include <unordered_set>
+#include <stack>
+#include <list>
+#include <algorithm>
 #include <set>
-
 
 using namespace std;
 
-typedef vector<string>   StrVec;
+typedef vector<string> StrVec;
 
-int V = 0; // 顶点数
-
-class GateInst  //具体某个门的信息
-{
+class GateInst {
 public:
-    GateInst(const char* pName)
-    { 
+    GateInst(const char* pName) {
         _instName = pName ? pName : "Unknown";
     }
 
-    void setGateType(const char* pName)
-    {
+    void setGateType(const char* pName) {
         _gateType = pName ? pName : "Unknown";
     }
 
-    void addNodeName(const char* pName)
-    {
+    void addNodeName(const char* pName) {
         _instNodes.push_back(pName ? pName : "Unknown");
     }
 
-    // void dumpInst()
-    // {
-    //     printf("%-5s  %s  ", _gateType.c_str(), _instName.c_str());
-    //     for(unsigned ii = 0; ii != _instNodes.size(); ++ii)
-    //     {
-    //         printf("%s  ", _instNodes[ii].c_str());
-    //     }
-    //     printf("\n");
-    // }
-
-    string  _gateType; // 门的类型
-    string  _instName; // 门的名称
-    StrVec  _instNodes; // 线的名称
+    string _gateType;
+    string _instName;
+    StrVec _instNodes;
 };
 
-class shixian{
+class shixian {
 public:
-    vector<vector<string>> all_SCC;//用于存储所有强连通分量
-    vector<vector<string>> sorted_Gates;//门结点和线结点分开并排序
+    vector<vector<string>> all_SCC;
+    vector<vector<string>> sorted_Gates;
     vector<vector<string>> sorted_Signals;
-    unordered_map<string, string> _gateTypeMap;//门结点的类型映射
+    unordered_map<string, string> _gateTypeMap;
 
-void tarjan_dfs(int x, int dfn[], int low[], stack<int>& s, bool in_stack[],map<string, int> &vertex_map,vector<string> &reverse_map,unordered_map<string, list<string>> &g) {
-    static int time = 1;
-    dfn[x] = low[x] = time++;
-    s.push(x);
-    in_stack[x] = true;
+    void tarjan_dfs(int x, int dfn[], int low[], stack<int>& s, bool in_stack[], unordered_map<string, int>& vertex_map, vector<string>& reverse_map, unordered_map<string, list<string>>& g) {
+        static int time = 1;
+        dfn[x] = low[x] = time++;
+        s.push(x);
+        in_stack[x] = true;
 
-    // 遍历与当前顶点 x 连接的所有顶点
-    for (const string& neighbor : g[reverse_map[x]]) {
-        int y = vertex_map[neighbor];
-        if (dfn[y] == 0) {
-            tarjan_dfs(y, dfn, low, s, in_stack,vertex_map,reverse_map,g);
-            low[x] = min(low[x], low[y]);
-        } else if (in_stack[y]) {
-            low[x] = min(low[x], dfn[y]);
-        }
-    }
-
-    if (dfn[x] == low[x]) {
-        int tmp;
-        do {
-            tmp = s.top();
-            s.pop();
-            in_stack[tmp] = false;
-            cout << reverse_map[tmp] << "-";  // 使用反向映射输出原始字符串顶点
-        } while (tmp != x);
-        cout << endl;
-    }
-}
-
-void scc_tarjan(map<string, int> &vertex_map,vector<string> &reverse_map,unordered_map<string, list<string>> &g) {
-    int dfn[V],low[V];
-    bool in_stack[V] ;
-    stack<int> s;
-
-    for (int i = 0; i < V; i++) {
-        if (dfn[i] == 0) {
-            tarjan_dfs(i, dfn, low, s, in_stack,vertex_map,reverse_map,g);
-        }
-    }
-}
-void detectCycles(unordered_map<string, list<string>>& graph,unordered_map<string, string>& gateTypeMap) 
-{
-    _gateTypeMap=gateTypeMap;
-   
-
-    // 整理环路信息
-    for (const auto& cycle : all_SCC) {
-        vector<string> loopSignals, loopGates;
-        for (const auto& signal : cycle) {                //如果result4还是要原来的答案格式，可以从这里下手修改
-            if (signal[0] == 'I') loopGates.push_back(signal);
-            else if (signal[0] == 'w') loopSignals.push_back(signal);
-        }
-
-        // 使用 set 进行去重并排序
-        set<string> uniqueSignals(loopSignals.begin(), loopSignals.end());
-        vector<string> sortedSignals(uniqueSignals.begin(), uniqueSignals.end());
-        sorted_Signals.push_back(sortedSignals);
-
-        set<string> uniqueGates(loopGates.begin(), loopGates.end());
-        vector<string> sortedGates(uniqueGates.begin(), uniqueGates.end());
-        sorted_Gates.push_back(sortedGates);
-    }
-}
-
-void print_result1()
-{
-
-        cout << "******* result_1.txt *********"<<endl;
-
-        for (size_t i = 0; i < all_SCC.size(); ++i){
-            // 打印环路，按照你的期望格式
-            cout << i + 1 << ")" << endl;
-            cout << "  Loop Signals: ";
-            for (size_t j = 0; j < sorted_Signals[i].size(); ++j) {
-                cout << sorted_Signals[i][j];
-                cout << ", ";
+        for (const string& neighbor : g[reverse_map[x]]) {
+            int y = vertex_map[neighbor];
+            if (dfn[y] == 0) {
+                tarjan_dfs(y, dfn, low, s, in_stack, vertex_map, reverse_map, g);
+                low[x] = min(low[x], low[y]);
+            } else if (in_stack[y]) {
+                low[x] = min(low[x], dfn[y]);
             }
-            cout << endl;
+        }
+
+        if (dfn[x] == low[x]) {
+            int tmp;
+            vector<string> scc;
+            do {
+                tmp = s.top();
+                s.pop();
+                in_stack[tmp] = false;
+                scc.push_back(reverse_map[tmp]);
+            } while (tmp != x);
+
+            if (scc.size() > 1) {  // Skip SCCs with a single node (without a self-loop)
+                all_SCC.push_back(scc);
+            }
+        }
+    }
+
+    void scc_tarjan(const int V, unordered_map<string, int>& vertex_map, vector<string>& reverse_map, unordered_map<string, list<string>>& g) {
+        int dfn[V], low[V];
+        bool in_stack[V];
+        stack<int> s;
+
+        fill(dfn, dfn + V, 0);
+        fill(low, low + V, 0);
+        fill(in_stack, in_stack + V, false);
+
+        for (int i = 0; i < V; i++) {
+            if (dfn[i] == 0) {
+                tarjan_dfs(i, dfn, low, s, in_stack, vertex_map, reverse_map, g);
+            }
+        }
+    }
+
+        // 辅助函数：检查是否有环
+    bool isCyclicUtil(const string& cur, unordered_map<string, list<string>>& graph) {
+        if (visited[cur]) return false; // 已访问，直接返回
+        visited[cur] = true;
+        recStack[cur] = true;
+        path.push_back(cur);
+
+        for (const string& nei : graph[cur]) {
+            if (!visited[nei]) {
+                if (isCyclicUtil(nei, graph)) return true; // 直接返回 true
+            } else if (recStack[nei]) {
+                vector<string> cycle;
+                auto it = find(path.begin(), path.end(), nei);
+                cycle.insert(cycle.end(), it, path.end()); // 使用插入
+                cycle.push_back(nei);
+                allCycles.push_back(cycle);
+            }
+        }
+
+        recStack[cur] = false;
+        path.pop_back();
+        return false;
+    }
+
+    void detectCycles(unordered_map<string, string>& gateTypeMap) {
+        _gateTypeMap = gateTypeMap;
+
+        for (const auto& SCC : all_SCC) {
+            vector<string> loopSignals, loopGates;
+            for (const auto& node : SCC) {
+                if (node[0] == 'I') loopGates.push_back(node);
+                else if (node[0] == 'w') loopSignals.push_back(node);
+            }
+
+            set<string> uniqueSignals(loopSignals.begin(), loopSignals.end());
+            sorted_Signals.push_back(vector<string>(uniqueSignals.begin(), uniqueSignals.end()));
+
+            set<string> uniqueGates(loopGates.begin(), loopGates.end());
+            //我直接在这里找环
+                for (const auto& node : uniqueGates) {
+                    if (!visited[node.first]) {
+                        isCyclicUtil(node.first, uniqueGates);
+                    }
+                }
+            sorted_Gates.push_back(vector<string>(uniqueGates.begin(), uniqueGates.end()));
+        }
+    }
+
+    void print_result1() {
+        cout << "******* result_1.txt *********\n";
+
+        for (size_t i = 0; i < all_SCC.size(); ++i) {
+            cout << i + 1 << ")\n";
+            cout << "  Loop Signals: ";
+            for (const auto& signal : sorted_Signals[i]) {
+                cout << signal << ", ";
+            }
+            cout << "\n";
 
             cout << "  Loop Gates: ";
-            for (size_t j = 0; j < sorted_Gates[i].size(); ++j) {
-                cout << sorted_Gates[i][j];
-                cout << ", ";
+            for (const auto& gate : sorted_Gates[i]) {
+                cout << gate << ", ";
             }
-            cout << endl << endl;
+            cout << "\n\n";
         }
-}
+    }
 };
 
-typedef vector<GateInst*>  GateInstVec;
+typedef vector<GateInst*> GateInstVec;
 shixian A;
 
-class NetlistModule //一个网表信息
-{
+class NetlistModule {
 public:
-    ~NetlistModule()
-    {
-        for(unsigned ii = 0; ii != _instVec.size(); ++ii)
-        {
-            delete _instVec[ii];
+    ~NetlistModule() {
+        for (auto& inst : _instVec) {
+            delete inst;
         }
     }
 
-    void setModuleName(const char* pName)
-    {
-        if(pName)
-            _moduelName = pName;
+    void setModuleName(const char* pName) {
+        if (pName) _moduelName = pName;
     }
 
-    void addInst(GateInst* pInst)
-    {
+    void addInst(GateInst* pInst) {
         _instVec.push_back(pInst);
     }
 
-    // void dumpInst()
-    // {
-    //     for(unsigned ii = 0; ii != _instVec.size(); ++ii)
-    //     {
-    //         GateInst* pInst = _instVec[ii];
-    //         if(pInst)
-    //         {
-    //             printf("%-3d: ", ii);
-    //             pInst->dumpInst();
-    //         }
-    //     }
-    // }
-
     void buildGraphAndDetectCycles() {
         unordered_map<string, list<string>> graph;
-        map<string, int> vertex_map;   // 字符串顶点到整数的映射
-        vector<string> reverse_map;    // 整数到字符串顶点的反向映射
-        unordered_map<string, string> gateTypeMap;// 新增，用于存储门名称和门类型的映射
-        // 构建图结构（邻接表）
-        for (unsigned ii = 0; ii != _instVec.size(); ++ii) {
-            GateInst* pInst = _instVec[ii];
-            
-            // 第一个节点通常是输出，剩下的节点是输入
-            string output = pInst->_instNodes[0];  // 输出信号
-            string gate_port1 = pInst->_instName + ".port1";  //门结点
+        unordered_map<string, int> vertex_map;
+        vector<string> reverse_map;
+        unordered_map<string, string> gateTypeMap;
+        int vertexCount = 0;
+
+        // Reserve space to avoid dynamic resizing
+        vertex_map.reserve(_instVec.size() * 3);  // Reserve space for vertices
+        reverse_map.reserve(_instVec.size() * 3); // Reserve space for reverse mapping
+        graph.reserve(_instVec.size() * 3);       // Reserve space for edges
+
+        for (auto& pInst : _instVec) {
+            string output = pInst->_instNodes[0];
+            string gate_port1 = pInst->_instName + ".port1";
             string gate_port2 = pInst->_instName + ".port2";
             gateTypeMap[gate_port1] = pInst->_gateType;
             gateTypeMap[gate_port2] = pInst->_gateType;
-           
-            graph[gate_port1].push_back(output);  //将门结点连接到输出信号
+
+            if (vertex_map.find(gate_port1) == vertex_map.end()) {
+                vertex_map[gate_port1] = vertexCount++;
+                reverse_map.push_back(gate_port1);
+            }
+            if (vertex_map.find(gate_port2) == vertex_map.end()) {
+                vertex_map[gate_port2] = vertexCount++;
+                reverse_map.push_back(gate_port2);
+            }
+            if (vertex_map.find(output) == vertex_map.end()) {
+                vertex_map[output] = vertexCount++;
+                reverse_map.push_back(output);
+            }
+
+            graph[gate_port1].push_back(output);
             graph[gate_port2].push_back(output);
-            //cout << "Adding edge from " << gate << " to " << output << endl;
-            for (unsigned jj = 1; jj < pInst->_instNodes.size(); ++jj) {
-                string input = pInst->_instNodes[jj];  // 输入信号
-                
-                // 将输入信号连接到门结点
-                if(jj==1)
+
+            for (size_t jj = 1; jj < pInst->_instNodes.size(); ++jj) {
+                string input = pInst->_instNodes[jj];
+                if (vertex_map.find(input) == vertex_map.end()) {
+                    vertex_map[input] = vertexCount++;
+                    reverse_map.push_back(input);
+                }
+
+                if (jj == 1)
                     graph[input].push_back(gate_port1);
                 else
                     graph[input].push_back(gate_port2);
-                //cout << "Adding edge from " << input << " to " << gate << endl;
             }
         }
-        for (const auto& [key, _] : graph) {
-        if (vertex_map.find(key) == vertex_map.end()) {
-            vertex_map[key] = V++;
-            reverse_map.push_back(key);  // 反向映射
-        }
-        for (const auto& neighbor : graph[key]) {
-            if (vertex_map.find(neighbor) == vertex_map.end()) {
-                vertex_map[neighbor] = V++;
-                reverse_map.push_back(neighbor);  // 反向映射
-            }
-        }
+
+        A.scc_tarjan(vertexCount, vertex_map, reverse_map, graph);
+        A.detectCycles(gateTypeMap);
     }
 
-        // 调用环路检测函数
-        A.scc_tarjan(vertex_map,reverse_map,graph);
-        A.detectCycles(graph,gateTypeMap);// 传递 gateTypeMap 用于后续环路检测时获取门的类型
-
-    }
-
-    string      _moduelName;
-    GateInstVec _instVec;  //一个类，包含门的信息
+    string _moduelName;
+    GateInstVec _instVec;
 };
 
 NetlistModule _glbNetlistModule;
 
-void printModInfo()
-{
-    // printf("module name is %s\n", _glbNetlistModule._moduelName.c_str());
-    // _glbNetlistModule.dumpInst();
+void printModInfo() {
+    _glbNetlistModule.buildGraphAndDetectCycles();
+    A.print_result1();
 }
-
-/*
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-int get_module_info( )
-{
-    vpiHandle systf_h = vpi_handle( vpiSysTfCall, NULL );
-    if( systf_h == NULL )
-        return 0;
-
-    vpiHandle modHdl = vpi_handle( vpiScope,systf_h );
-    modHdl = vpi_handle(vpiModule, modHdl);
-    char *pModDefName = vpi_get_str(vpiDefName, modHdl);
-    _glbNetlistModule.setModuleName(pModDefName);
-
-    vpiHandle instIter = vpi_iterate(vpiInstance, modHdl);
-    vpiHandle instHdl = NULL;
-    while( ( instHdl = vpi_scan( instIter ) ) )
-    {
-        char* pInstName = vpi_get_str( vpiName, instHdl );
-        GateInst* pGateInst = new GateInst(pInstName);
-
-        char *pModDefName = vpi_get_str(vpiDefName, instHdl);
-        pGateInst->setGateType(pModDefName);
-
-        vpiHandle portIter = vpi_iterate(vpiPort, instHdl);
-        vpiHandle portHdl = NULL;
-        while ( (portHdl = vpi_scan(portIter)) )
-        {
-            vpiHandle highConnHdl = vpi_handle(vpiHighConn, portHdl);
-            char* pPortName = vpi_get_str(vpiName, highConnHdl);
-            pGateInst->addNodeName(pPortName);
-        }
-
-        _glbNetlistModule.addInst(pGateInst);
-    }
-
-    printModInfo();
-    vpi_control(vpiFinish);
-    return 0;
-}
-
-#ifdef  __cplusplus
-}
-#endif
-
-*/

@@ -386,8 +386,7 @@ public:
 
     void buildGraphAndDetectCycles() {
         unordered_map<string, list<string>> graph;
-        map<string, int> vertex_map;   // 字符串顶点到整数的映射
-        vector<string> reverse_map;    // 整数到字符串顶点的反向映射
+
         unordered_map<string, string> gateTypeMap;// 新增，用于存储门名称和门类型的映射
         // 构建图结构（邻接表）
         for (unsigned ii = 0; ii != _instVec.size(); ++ii) {
@@ -402,7 +401,7 @@ public:
            
             graph[gate_port1].push_back(output);  //将门结点连接到输出信号
             graph[gate_port2].push_back(output);
-            //cout << "Adding edge from " << gate << " to " << output << endl;
+
             for (unsigned jj = 1; jj < pInst->_instNodes.size(); ++jj) {
                 string input = pInst->_instNodes[jj];  // 输入信号
                 
@@ -411,26 +410,9 @@ public:
                     graph[input].push_back(gate_port1);
                 else
                     graph[input].push_back(gate_port2);
-                //cout << "Adding edge from " << input << " to " << gate << endl;
+
             }
         }
-
-        for (const auto& [key, _] : graph) {
-        if (vertex_map.find(key) == vertex_map.end()) {
-            vertex_map[key] = V++;
-            reverse_map.push_back(key);  // 反向映射
-        }
-        for (const auto& neighbor : graph[key]) {
-            if (vertex_map.find(neighbor) == vertex_map.end()) {
-                vertex_map[neighbor] = V++;
-                reverse_map.push_back(neighbor);  // 反向映射
-            }
-        }
-    }
-
-        // 调用环路检测函数
-        A.scc_tarjan(vertex_map,reverse_map,graph);
-        A.detectCycles(graph,gateTypeMap);// 传递 gateTypeMap 用于后续环路检测时获取门的类型
     }
 
     string _moduelName;

@@ -171,11 +171,10 @@ public:
                         never.push_back(scc);
                     }
                     else {
-                        points.reserve(1000);
                         if(cycles.size() == 1){//只有一个奇数环一定能震
                             could.push_back(scc);
                             cyc_size.push_back(1);
-                            points.push_back({""});
+                            points.push_back({});
                         }
                         else if(cycles.size() == 2 && zhen == 2){//（只有两个环，且都为奇数）一定能震吗？
                             could.push_back(scc);
@@ -350,7 +349,7 @@ public:
 
         if(q3){
 
-            cout<<"  Loop Condition: ";
+            cout<<"  Loop Conditions: ";
 
             vector<string> scc_p;
             for (string port:scc_g) {
@@ -409,29 +408,28 @@ public:
         }
     }
 
-void result4() {
-    cout << "******* result_4.txt *********" << endl;
-    int i = 1;
-    for (vector<string> scc : could) {
+    void result4(){
+        cout << "******* result_4.txt *********"<<endl;
 
-        cout << i << ")" << endl << "  Loop Breaker: ";
+        int i=1;
+        for(vector<string> scc:could){
+            cout<<i<<")"<<endl<<"  Loop Breaker: ";
 
-        if (cyc_size[i-1] == 1) {
-            cout << mapstrg_w[scc[0]];
+            if(cyc_size[i-1] == 1){
+                cout<<mapstrg_w[scc[0]];
+            }
+            else if(cyc_size[i-1]==2){
+                cout<<mapstrg_w[points[i-1][0].substr(0,points[i-1][0].size() - 5)];
+            }
+            i++;
+            cout<<endl<<endl<<endl;
         }
-        else if (cyc_size[i-1] == 2) {
-            cout << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
-        }
-        i++;
-        cout << endl << endl << endl;
     }
-}
 
     vector<vector<string>> all_scc;//存放所有scc
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
     vector<int> cyc_size;//记录可能震荡的scc有几个环
     unordered_map<string, list<string>> graph;
 

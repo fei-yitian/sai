@@ -171,18 +171,17 @@ public:
                         never.push_back(scc);
                     }
                     else {
-                        points.reserve(1000);
                         if(cycles.size() == 1){//只有一个奇数环一定能震
                             could.push_back(scc);
-                            cyc_size.push_back(1);
-                            points.push_back({""});
+                            cyc_size.push_back(false);
+                            points.push_back({"a"});
                         }
                         else if(cycles.size() == 2 && zhen == 2){//（只有两个环，且都为奇数）一定能震吗？
                             could.push_back(scc);
-                            cyc_size.push_back(2);
+                            cyc_size.push_back(true);
                             points.push_back(find_point(scc));
                         }
-                        else if(cycles.size()==2 && zhen == 1){//只有两个环，一奇一偶
+                        else if(cycles.size() == 2 && zhen == 1){//只有两个环，一奇一偶
 
                             bool stop = true;//stop表示能否抑制
                             vector<string> point = find_point(scc);//point为一个存放后缀为port的容器，我们暂时默认他只有一个
@@ -225,7 +224,7 @@ public:
 
                                                 if(x == 3){
                                                     could.push_back(scc);
-                                                    cyc_size.push_back(2);
+                                                    cyc_size.push_back(true);
                                                     points.push_back(point);
                                                     stop = false;
                                                     break;
@@ -350,7 +349,7 @@ public:
 
         if(q3){
 
-            cout<<"  Loop Condition: ";
+            cout<<"  Loop Conditions: ";
 
             vector<string> scc_p;
             for (string port:scc_g) {
@@ -379,7 +378,7 @@ public:
             cout<<endl;
         }
         
-        cout<<endl;
+        cout<<endl<<endl;
     }
 
     void result1(){
@@ -409,30 +408,31 @@ public:
         }
     }
 
-void result4() {
-    cout << "******* result_4.txt *********" << endl;
-    int i = 1;
-    for (vector<string> scc : could) {
+    void result4(){
+        cout << "******* result_4.txt *********"<<endl;
 
-        cout << i << ")" << endl << "  Loop Breaker: ";
-
-        if (cyc_size[i-1] == 1) {
-            cout << mapstrg_w[scc[0]];
+        int i=0;
+        for(vector<string> scc:could){
+            cout<<i+1<<")"<<endl<<"  Loop Breaker: ";
+            
+            if(cyc_size[i]==false){
+                //cout<<cyc_size[i]<<endl;
+                cout<<mapstrg_w[scc[0]];
+            }
+            else if(cyc_size[i]==true){
+                //cout<<cyc_size[i]<<endl;
+                cout<<mapstrg_w[points[i][0].substr(0,points[i][0].size() - 5)];
+            }
+            i++;
+            cout<<endl<<endl<<endl;
         }
-        else if (cyc_size[i-1] == 2) {
-            cout << mapstrg_w[points[i-1][0].substr(0, points[i-1][0].size() - 5)];
-        }
-        i++;
-        cout << endl << endl << endl;
     }
-}
 
     vector<vector<string>> all_scc;//存放所有scc
     vector<vector<string>> never;//存放所有不可能震荡的scc
     vector<vector<string>> could;//存放可能震荡的scc
     vector<vector<string>> points;//存放可能震荡的scc中重复的point
-    
-    vector<int> cyc_size;//记录可能震荡的scc有几个环
+    vector<bool> cyc_size;//记录可能震荡的scc有几个环
     unordered_map<string, list<string>> graph;
 
     unordered_map<string, vector<string>> mapstrw_p;//wire find port
@@ -456,7 +456,7 @@ void printModInfo()
     _glbNetlistModule.result1();
     _glbNetlistModule.result2();
     _glbNetlistModule.result3();
-    _glbNetlistModule.result4();
+    //_glbNetlistModule.result4();
 }
 
 
