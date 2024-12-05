@@ -1,0 +1,4 @@
+1)
+  Loop Signals: w_4_0, w_4_2, 
+  Loop Gates: I4.port2, I5.port1, 
+
